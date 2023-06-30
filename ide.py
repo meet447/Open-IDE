@@ -47,6 +47,22 @@ file_tree.column("Type", width=80, minwidth=80)
 file_tree.heading("#0", text="Name", anchor=tk.W)
 file_tree.heading("Type", text="Type", anchor=tk.W)
 
+# Create a frame for the variable window
+variable_frame = ctk.CTkFrame(notebook)
+notebook.add(variable_frame, text="Variables")
+
+# Create a Treeview widget for displaying variables
+variable_tree = ttk.Treeview(variable_frame)
+variable_tree.pack(fill=tk.BOTH, expand=True)
+
+# Set up the variable tree columns
+variable_tree["columns"] = ("Value")
+variable_tree.column("#0", width=200, minwidth=200)
+variable_tree.column("Value", width=200, minwidth=200)
+
+# Add headers to the variable tree columns
+variable_tree.heading("#0", text="Variable", anchor=tk.W)
+variable_tree.heading("Value", text="Value", anchor=tk.W)
 
 # Function to populate the file tree
 def populate_file_tree():
@@ -271,6 +287,34 @@ def handle_enter(event):
     if current_line.endswith(":"):
         code_editor.insert("insert", "\n    ")  # Insert a new line with indentation
         return "break"  # Prevent the default behavior of Enter key press
+
+
+def retrieve_variables():
+    code = code_editor.get("1.0", tk.END)
+
+    # Create a new local scope for executing the code
+    local_vars = {}
+    global_vars = {}
+
+    try:
+        exec(code, global_vars, local_vars)
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+        return
+
+    # Clear existing items from the variable tree
+    variable_tree.delete(*variable_tree.get_children())
+
+    # Populate the variable tree with variables and their values
+    for name, value in local_vars.items():
+        if not name.startswith("__") and not callable(value):
+            variable_tree.insert("", tk.END, text=name, values=(repr(value),))
+
+
+# Create a button to retrieve variables
+retrieve_variables_button = ctk.CTkButton(app_bar_frame, text="Retrieve Variables", command=retrieve_variables)
+retrieve_variables_button.pack(side=tk.LEFT, padx=10, pady=5)
+
 
 
 # Bind Enter key press event to handle_enter function
